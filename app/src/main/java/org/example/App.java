@@ -5,6 +5,8 @@ package org.example;
 
 import org.apache.poi.ss.usermodel.Sheet;
 import org.example.model.Complaint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.example.factory.WorkbookFactory;
 import org.example.factory.ComplaintFactory;
 
@@ -15,16 +17,18 @@ import java.nio.file.Paths;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class App {
-    public static final String datasetPath = "app/src/main/resources/datasets.xlsx";
+    public static final Logger log = LoggerFactory.getLogger(App.class);
+    public static final String DATASET_PATH = "app/src/main/resources/datasets.xlsx";
 
     public static void main(String[] args) {
-        Optional<Workbook> bookOpt = WorkbookFactory.getWorkbook(Paths.get(datasetPath));
+        Optional<Workbook> bookOpt = WorkbookFactory.getWorkbook(Paths.get(DATASET_PATH));
 
         if (bookOpt.isEmpty()) {
-            System.out.printf("Could not load dataset %s", datasetPath);
+            log.info("Could not load dataset {}", DATASET_PATH);
             Runtime.getRuntime().halt(1);
         }
 
+        log.info("Building out sheet stream.");
         final var book = bookOpt.get();
 
         Stream.Builder<Sheet> builder = Stream.builder();
@@ -37,6 +41,6 @@ public class App {
                 .map(ComplaintFactory::toComplaints)
                 .flatMap(List::stream)
                 .map(Complaint::toString)
-                .peek(System.out::println);
+                .peek(log::info);
     }
 }

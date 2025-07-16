@@ -1,6 +1,8 @@
 package org.example.factory;
 
 import org.example.model.Complaint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Spliterator;
@@ -11,7 +13,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 public class ComplaintFactory {
+    public static final Logger log = LoggerFactory.getLogger(ComplaintFactory.class);
+
     public static List<Complaint> toComplaints(Sheet sheet) {
+        log.info("Converting sheet {}", sheet.getSheetName());
         var spliterator = Spliterators.spliteratorUnknownSize(sheet.rowIterator(), Spliterator.CONCURRENT);
 
         return StreamSupport.stream(spliterator, false)
