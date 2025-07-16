@@ -8,6 +8,8 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'java'
+    id 'eclipse'
 }
 
 repositories {
@@ -39,13 +41,15 @@ application {
     mainClass = 'org.example.App'
 }
 
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-}
-
 jar {
     manifest {
         attributes 'Main-Class': application.mainClass
     }
 }
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+
+tasks.named("build") { finalizedBy("eclipse") }
