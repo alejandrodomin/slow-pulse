@@ -12,6 +12,7 @@ import org.example.factory.ComplaintFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.nio.file.Paths;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -24,23 +25,30 @@ public class App {
         Optional<Workbook> bookOpt = WorkbookFactory.getWorkbook(Paths.get(DATASET_PATH));
 
         if (bookOpt.isEmpty()) {
-            log.info("Could not load dataset {}", DATASET_PATH);
+            log.error("Could not load dataset {}", DATASET_PATH);
             Runtime.getRuntime().halt(1);
         }
 
+        List<String> complaints = sheetStream(bookOpt.get())
+                .filter(sheet -> sheet.getSheetName().contains("Complaint"))
+                .peek(sheet -> log.info("Using sheet {} for complaints.", sheet.getSheetName()))
+                .map(ComplaintFactory::toComplaints)
+                .flatMap(List::stream)
+                .map(Complaint::toString)
+                .peek(log::info)
+                .collect(Collectors.toList());
+
+        log.info("All filtered complaints {}", complaints);
+    }
+
+    public static Stream<Sheet> sheetStream(Workbook book) {
         log.info("Building out sheet stream.");
-        final var book = bookOpt.get();
 
         Stream.Builder<Sheet> builder = Stream.builder();
         for (int i = 0; i < book.getNumberOfSheets(); i++) {
             builder.add(book.getSheetAt(i));
         }
 
-        builder.build()
-                .filter(sheet -> sheet.getSheetName().contains("Complaint"))
-                .map(ComplaintFactory::toComplaints)
-                .flatMap(List::stream)
-                .map(Complaint::toString)
-                .peek(log::info);
+        return builder.build();
     }
 }
