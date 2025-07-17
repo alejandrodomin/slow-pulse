@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -18,9 +19,10 @@ public class ComplaintFactory {
 
     public static List<Complaint> toComplaints(Sheet sheet) {
         log.info("Converting sheet {}", sheet.getSheetName());
-        var spliterator = Spliterators.spliteratorUnknownSize(sheet.rowIterator(), Spliterator.CONCURRENT);
-
-        return StreamSupport.stream(spliterator, false)
+        return Stream.of(sheet)
+                .map(Sheet::iterator)
+                .map(iter -> Spliterators.spliteratorUnknownSize(iter, Spliterator.CONCURRENT))
+                .flatMap(split -> StreamSupport.stream(split, false))
                 .filter(row -> row.getRowNum() > 11)
                 .map(ComplaintFactory::fromRow)
                 .filter(Optional::isPresent)
@@ -42,7 +44,7 @@ public class ComplaintFactory {
             var complaint = new Complaint(agency, type, descriptor, details, publicView, locationType);
             return Optional.of(complaint);
         } catch (NullPointerException exp) {
-            log.error("Could not conver row {} due to null cells", row.getRowNum());
+            log.debug("Could not convert row {} due to null cells", row.getRowNum());
         }
 
         return Optional.empty();

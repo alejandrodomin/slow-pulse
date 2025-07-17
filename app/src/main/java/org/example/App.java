@@ -12,8 +12,11 @@ import org.example.factory.ComplaintFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.nio.file.Paths;
 import org.apache.poi.ss.usermodel.Workbook;
 
@@ -27,7 +30,9 @@ public class App {
                 .map(WorkbookFactory::getWorkbook)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .flatMap(App::sheetStream)
+                .map(Workbook::sheetIterator)
+                .map(iter -> Spliterators.spliteratorUnknownSize(iter, Spliterator.CONCURRENT))
+                .flatMap(split -> StreamSupport.stream(split, false))
                 .filter(sheet -> sheet.getSheetName().contains("Complaint"))
                 .map(ComplaintFactory::toComplaints)
                 .flatMap(List::stream)
@@ -35,16 +40,5 @@ public class App {
                 .collect(Collectors.toList());
 
         log.info("Compiled {} complaints.", complaints.size());
-    }
-
-    public static Stream<Sheet> sheetStream(Workbook book) {
-        log.debug("Building out sheet stream.");
-
-        Stream.Builder<Sheet> builder = Stream.builder();
-        for (int i = 0; i < book.getNumberOfSheets(); i++) {
-            builder.add(book.getSheetAt(i));
-        }
-
-        return builder.build();
     }
 }
