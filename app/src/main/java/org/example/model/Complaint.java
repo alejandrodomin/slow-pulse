@@ -5,6 +5,6 @@ public record Complaint(
         String type,
         String descriptor,
         String additonalDetails,
-        Boolean publicView,
+        String publicView,
         String locationType) {
 }

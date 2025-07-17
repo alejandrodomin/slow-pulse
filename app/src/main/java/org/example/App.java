@@ -22,27 +22,23 @@ public class App {
     public static final String DATASET_PATH = "app/src/main/resources/datasets.xlsx";
 
     public static void main(String[] args) {
-        Optional<Workbook> bookOpt = WorkbookFactory.getWorkbook(Paths.get(DATASET_PATH));
-
-        if (bookOpt.isEmpty()) {
-            log.error("Could not load dataset {}", DATASET_PATH);
-            Runtime.getRuntime().halt(1);
-        }
-
-        List<String> complaints = sheetStream(bookOpt.get())
+        List<String> complaints = Stream.of(DATASET_PATH)
+                .map(Paths::get)
+                .map(WorkbookFactory::getWorkbook)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .flatMap(App::sheetStream)
                 .filter(sheet -> sheet.getSheetName().contains("Complaint"))
-                .peek(sheet -> log.info("Using sheet {} for complaints.", sheet.getSheetName()))
                 .map(ComplaintFactory::toComplaints)
                 .flatMap(List::stream)
                 .map(Complaint::toString)
-                .peek(log::info)
                 .collect(Collectors.toList());
 
-        log.info("All filtered complaints {}", complaints);
+        log.info("Compiled {} complaints.", complaints.size());
     }
 
     public static Stream<Sheet> sheetStream(Workbook book) {
-        log.info("Building out sheet stream.");
+        log.debug("Building out sheet stream.");
 
         Stream.Builder<Sheet> builder = Stream.builder();
         for (int i = 0; i < book.getNumberOfSheets(); i++) {
