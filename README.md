@@ -1,5 +1,7 @@
 # Slow-pulse
 
+Goal achieved.
+
 ## Introduction
 
 This is a simple project, with a simple goal.
