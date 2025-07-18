@@ -3,21 +3,20 @@
  */
 package org.example;
 
-import org.apache.poi.ss.usermodel.Sheet;
-import org.example.model.Complaint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.example.factory.WorkbookFactory;
 import org.example.factory.ComplaintFactory;
+import org.example.util.MetricsUtil;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.nio.file.Paths;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class App {
@@ -25,20 +24,23 @@ public class App {
     public static final String DATASET_PATH = "app/src/main/resources/datasets.xlsx";
 
     public static void main(String[] args) {
-        List<String> complaints = Stream.of(DATASET_PATH)
+        Stream.of(DATASET_PATH)
                 .map(Paths::get)
                 .map(WorkbookFactory::getWorkbook)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(Workbook::sheetIterator)
-                .map(iter -> Spliterators.spliteratorUnknownSize(iter, Spliterator.CONCURRENT))
-                .flatMap(split -> StreamSupport.stream(split, false))
+                .flatMap(App::toSheets)
                 .filter(sheet -> sheet.getSheetName().contains("Complaint"))
                 .map(ComplaintFactory::toComplaints)
+                .map(MetricsUtil::all)
                 .flatMap(List::stream)
-                .map(Complaint::toString)
-                .collect(Collectors.toList());
+                .forEach(log::info);
+    }
 
-        log.info("Compiled {} complaints.", complaints.size());
+    public static Stream<Sheet> toSheets(Workbook book) {
+        return Stream.of(book)
+                .map(Workbook::sheetIterator)
+                .map(iter -> Spliterators.spliteratorUnknownSize(iter, Spliterator.CONCURRENT))
+                .flatMap(split -> StreamSupport.stream(split, false));
     }
 }
